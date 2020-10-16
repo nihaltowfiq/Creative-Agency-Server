@@ -21,6 +21,22 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 client.connect(err => {
   const serviceCollection = client.db("creativeAgency").collection("services");
   const orders = client.db("creativeAgency").collection("orders");
+  const reviews = client.db("creativeAgency").collection("reviews");
+
+  app.post('/addReview', (req, res) => {
+    const review = req.body;
+    reviews.insertOne(review)
+      .then(result => {
+        res.send(result.insertedCount > 0);
+      })
+  });
+
+  app.get('/allReviews', (req, res) => {
+    reviews.find({})
+        .toArray((err, documents) => {
+            res.send(documents);
+        })
+});
 
   app.post('/addOrder', (req, res) => {
     const file = req.files.file;
@@ -32,9 +48,9 @@ client.connect(err => {
     const icon = req.body.icon;
     const filePath = `${__dirname}/pictures/${file.name}`;
     file.mv(filePath, err => {
-      if(err){
+      if (err) {
         console.log(err);
-        res.status(500).send({msg: "failed to upload"});
+        res.status(500).send({ msg: "failed to upload" });
       }
       const newImg = fs.readFileSync(filePath);
       const encodedImg = newImg.toString('base64');
@@ -43,10 +59,10 @@ client.connect(err => {
         size: file.size,
         img: Buffer(encodedImg, 'base64')
       }
-      orders.insertOne({name, email, serviceName, details, price, image, icon})
+      orders.insertOne({ name, email, serviceName, details, price, image, icon })
         .then(result => {
           fs.remove(filePath, error => {
-            if(error) {console.log(error)}
+            if (error) { console.log(error) }
             res.send(result.insetedCount > 0)
           })
         })
@@ -54,7 +70,7 @@ client.connect(err => {
   });
 
   app.get('/orders', (req, res) => {
-    orders.find({email: req.query.email})
+    orders.find({ email: req.query.email })
       .toArray((err, docs) => {
         res.send(docs)
       })
@@ -73,9 +89,9 @@ client.connect(err => {
     const details = req.body.details;
     const filePath = `${__dirname}/pictures/${file.name}`;
     file.mv(filePath, err => {
-      if(err){
+      if (err) {
         console.log(err);
-        res.status(500).send({msg: "failed to upload"});
+        res.status(500).send({ msg: "failed to upload" });
       }
       const newImg = fs.readFileSync(filePath);
       const encodedImg = newImg.toString('base64');
@@ -84,10 +100,10 @@ client.connect(err => {
         size: file.size,
         img: Buffer(encodedImg, 'base64')
       }
-      serviceCollection.insertOne({title, details, image})
+      serviceCollection.insertOne({ title, details, image })
         .then(result => {
           fs.remove(filePath, error => {
-            if(error) {console.log(error)}
+            if (error) { console.log(error) }
             res.send(result.insetedCount > 0)
           })
         })
@@ -107,7 +123,7 @@ client.connect(err => {
 
 
 app.get('/', (req, res) => {
-  res.send('Hello Ema-John')
+  res.send('Hello Creative Agency')
 });
 
 app.listen(port, () => {

@@ -5,6 +5,7 @@ require('dotenv').config();
 const MongoClient = require('mongodb').MongoClient;
 const fs = require('fs-extra');
 const fileUpload = require('express-fileupload');
+const ObjectId = require('mongodb').ObjectID;
 
 const app = express();
 app.use(bodyParser.json());
@@ -21,6 +22,15 @@ client.connect(err => {
   const serviceCollection = client.db("creativeAgency").collection("services");
   const orders = client.db("creativeAgency").collection("orders");
   const reviews = client.db("creativeAgency").collection("reviews");
+  const admins = client.db("creativeAgency").collection("admins");
+
+  app.post('/addAdmin', (req, res) => {
+    const admin = req.body;
+    admins.insertOne(admin)
+      .then(result => {
+        res.send(result.insertedCount > 0);
+      })
+  });
 
   app.post('/addReview', (req, res) => {
     const review = req.body;
@@ -45,6 +55,7 @@ client.connect(err => {
     const details = req.body.details;
     const price = req.body.price;
     const icon = req.body.icon;
+    const status = req.body.status;
     const newImg = req.files.file.data;
     const encodedImg = newImg.toString('base64');
     const image = {
@@ -52,7 +63,7 @@ client.connect(err => {
       size: file.size,
       img: Buffer.from(encodedImg, 'base64')
     }
-    orders.insertOne({ name, email, serviceName, details, price, image, icon })
+    orders.insertOne({ name, email, serviceName, details, price, image, icon, status })
       .then(result => {
         res.send(result.insetedCount > 0)
       })
@@ -92,10 +103,23 @@ client.connect(err => {
   app.get('/services', (req, res) => {
     serviceCollection.find({})
       .toArray((err, docs) => res.send(docs));
-  })
+  });
+
+
+  app.patch('/update/:id', (req, res) => {
+    orders.updateOne({_id: ObjectId(req.params.id)},
+    {
+      $set: { status: req.body.status }
+    })
+    .then(result => res.send(result.modifiedCount > 0))
+});
 
   console.log('DB connected');
 });
+
+
+
+
 
 app.get('/', (req, res) => {
   res.send('Hello Creative Agency')
